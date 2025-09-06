@@ -1,6 +1,6 @@
 # corpofit_mobile
 
-A new Flutter project.
+A Flutter mobile application for CorpoFit.
 
 ## Getting Started
 
