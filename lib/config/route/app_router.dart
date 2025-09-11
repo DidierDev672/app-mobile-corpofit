@@ -17,7 +17,7 @@ import '../../physical_exercise/physical_exercise.dart';
 import '../../sports_activity/presentation/screens/screens.dart';
 import 'app_router_notifier.dart';
 
-final goRouterProvider = Provider((ref) {
+final goRouterProvider = Provider<GoRouter>((ref) {
   final goRouterNotifier = ref.read(goRouterNotifierProvider);
 
   return GoRouter(
@@ -29,7 +29,7 @@ final goRouterProvider = Provider((ref) {
         builder: (context, state) => const CheckAuthStatusScreen(),
       ),
       GoRoute(
-        path: '/',
+        path: '/home',
         builder: (context, state) => HomeScreen(onThemeChanged: (value) {}),
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
@@ -128,26 +128,28 @@ final goRouterProvider = Provider((ref) {
     ],
 
     redirect: (context, state) {
+      final container = ProviderScope.containerOf(context);
+      final authStatus = container.read(authProvider);
       final isGoingTo = state.matchedLocation;
-      final authStatus = goRouterNotifier.authStatus;
 
-      print("isGoingTo: $isGoingTo");
-      print("authStatus: $authStatus");
+      print("🔄 isGoingTo: $isGoingTo");
+      print("🔑 authStatus: ${authStatus.authStatus}");
 
-      if (isGoingTo == '/splash' && authStatus == AuthStatus.cheking) {
-        return '/';
-      }
+      if (isGoingTo == '/splash' &&
+          authStatus.authStatus == AuthStatus.checking)
+        return null;
 
-      if (authStatus == AuthStatus.notAuthenticated) {
+      if (authStatus.authStatus == AuthStatus.notAuthenticated) {
         if (isGoingTo == '/login' || isGoingTo == '/register') return null;
+
         return '/login';
       }
 
-      if (authStatus == AuthStatus.authenticated) {
+      if (authStatus.authStatus == AuthStatus.authenticated) {
         if (isGoingTo == '/login' ||
             isGoingTo == '/register' ||
             isGoingTo == '/splash') {
-          return '/';
+          return '/home';
         }
       }
 

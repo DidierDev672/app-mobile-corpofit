@@ -2,50 +2,56 @@ import 'package:corpofit_mobile/utils/infrastructure/services/key_value_storage_
 import 'package:shared_preferences/shared_preferences.dart';
 
 class KeyValueStorageServiceImpl extends KeyValueStorageService {
-  Future<SharedPreferences> getSharedPrefs() async {
-    return await SharedPreferences.getInstance();
-  }
+  late SharedPreferences _prefs;
+  bool _isInitialized = false;
 
   @override
-  Future<T?> getKeyValue<T>(String key) async {
-    final prefs = await getSharedPrefs();
+  Future<void> initialize() async {
+    if (_isInitialized) return;
 
-    switch (T) {
-      case int:
-        return prefs.getInt(key) as T?;
-      case String:
-        return prefs.getString(key) as T?;
-
-      default:
-        throw UnimplementedError(
-          'GET not implemented for type ${T.runtimeType}',
-        );
+    try {
+      _prefs = await SharedPreferences.getInstance();
+      _isInitialized = true;
+    } catch (e) {
+      throw Exception('Failed to initialize storage: $e');
     }
   }
 
   @override
-  Future<bool> removeKey(String key) async {
-    final prefs = await getSharedPrefs();
-    return await prefs.remove(key);
+  Future<T?> getKeyValue<T>(String key) async {
+    if (!_isInitialized) await initialize();
+
+    try {
+      if (T == String) return _prefs.getString(key) as T;
+      if (T == int) return _prefs.getInt(key) as T?;
+      if (T == bool) return _prefs.getBool(key) as T?;
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> removeKey(String key) async {
+    if (!_isInitialized) await initialize();
+
+    await _prefs.remove(key);
   }
 
   @override
   Future<void> setKeyValue<T>(String key, T value) async {
-    final prefs = await getSharedPrefs();
+    if (!_isInitialized) await initialize();
 
-    switch (T) {
-      case int:
-        prefs.setInt(key, value as int);
-        break;
-
-      case String:
-        prefs.setString(key, value as String);
-        break;
-
-      default:
-        throw UnimplementedError(
-          'Set not implemented for type ${T.runtimeType}',
-        );
+    try {
+      if (value is String) {
+        await _prefs.setString(key, value);
+      } else if (value is int) {
+        await _prefs.setInt(key, value);
+      } else if (value is bool) {
+        await _prefs.setBool(key, value);
+      }
+    } catch (e) {
+      throw Exception('Failed to set value: $e');
     }
   }
 }

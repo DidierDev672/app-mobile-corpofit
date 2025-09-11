@@ -2,14 +2,16 @@ import '../../domain/domain.dart';
 
 class UserMapper {
   static User userJsonToEntity(Map<String, dynamic> json) => User(
-    uuid: json['uuid'],
-    fullName: json['fullName'],
-    numberDocument: json['numberDocument'],
-    phone: json['phone'],
-    email: json['email'],
-    address: json['address'],
-    birthDate: json['birthDate'],
-    password: json['password'],
-    photo: json['photo'],
+    message: _parseString(json['message']) ?? '',
+    email: _parseString(json['email']) ?? '',
+    token: _parseString(json['token']) ?? '',
+    timestap: _parseString(json['timestap']) ?? '',
   );
+
+  //TODO: Método auxiliar para manejar nulls
+  static String? _parseString(dynamic value) {
+    if (value == null) return '';
+    if (value is String) return value;
+    return value.toString();
+  }
 }

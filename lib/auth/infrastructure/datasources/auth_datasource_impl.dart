@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:corpofit_mobile/auth/auth.dart';
 import 'package:corpofit_mobile/auth/infrastructure/errors/auth_errors.dart';
-import 'package:corpofit_mobile/auth/infrastructure/mappers/login_mapper.dart';
 import 'package:corpofit_mobile/auth/infrastructure/mappers/user_mapper.dart';
 import 'package:corpofit_mobile/config/constante/enviroment.dart';
 import 'package:dio/dio.dart';
@@ -15,17 +14,9 @@ class AuthDatasourceImpl implements AuthDatasources {
     dio = createDio();
   }
 
-  static String get baseUrl {
-    var url = Environment.apiUri;
-    if (kDebugMode && Platform.isAndroid) {
-      url = url
-          .replaceAll('localhost', '10.0.2.2')
-          .replaceAll('127.0.0.1', '10.0.2.2');
-    }
-    return url;
-  }
-
   static Dio createDio() {
+    final baseUrl = _getBaseUrl();
+
     final dio = Dio(
       BaseOptions(
         baseUrl: baseUrl,
@@ -53,47 +44,61 @@ class AuthDatasourceImpl implements AuthDatasources {
     return dio;
   }
 
-  @override
-  Future<Login> checkAuthStatus(String token) async {
+  static String _getBaseUrl() {
     try {
-      final response = await dio.get(
-        'check-token-user',
-        options: Options(headers: {'Authorization': token}),
-      );
+      var url = Environment.apiUrl;
 
-      final user = LoginMapper.loginJsonToEntity(response.data);
-      return user;
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 401) {
-        throw CustomError('Token inválido');
+      if (kDebugMode && Platform.isAndroid) {
+        url = url
+            .replaceAll('localhost', '10.0.2.2')
+            .replaceAll('127.0.0.1', '10.0.2.2');
       }
-      if (e.type == DioErrorType.connectionTimeout) {
-        throw CustomError('Check internet connection');
+
+      if (kDebugMode) {
+        print('🌐 Server URL: $url');
       }
-      throw Exception();
+
+      return url;
     } catch (e) {
-      throw Exception(e);
+      throw Exception('Failed to get base URL: $e');
     }
   }
 
   @override
-  Future<Login> login(Login login) async {
+  Future<User> checkAuthStatus(String token) async {
     try {
-      final response = await dio.post('/login-user', data: login.toJson());
-
-      final user = LoginMapper.loginJsonToEntity(response.data);
+      final response = await dio.post(
+        '/check-token-user',
+        options: Options(headers: {'Authorization': token}),
+      );
+      final user = UserMapper.userJsonToEntity(response.data);
       return user;
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 401) {
-        throw CustomError(
-          e.response?.data['message'] ?? 'Incorrect credentials',
-        );
-      }
-      if (e.type == DioErrorType.connectionTimeout) {
-        throw CustomError('Check internet connection');
-      }
-      throw Exception();
     } catch (e) {
+      if (e is DioError) {
+        if (e.response?.statusCode == 401) {
+          throw CustomError('Token incorrecto');
+        }
+      }
+
+      throw Exception();
+    }
+  }
+
+  @override
+  Future<User> login(String email, String password) async {
+    try {
+      final response = await dio.post(
+        '/login-user',
+        data: {'email': email, 'password': password},
+      );
+      final user = UserMapper.userJsonToEntity(response.data);
+      return user;
+    } catch (e) {
+      if (e is DioError) {
+        if (e.response?.statusCode == 401) {
+          throw CustomError('Credenciales incorrectas');
+        }
+      }
       throw Exception(e);
     }
   }

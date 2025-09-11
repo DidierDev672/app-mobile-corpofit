@@ -1,24 +1,28 @@
-import 'dart:async';
-
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../auth/presentation/provider/providers.dart';
+import '../../auth/presentation/provider/auth_provider.dart';
 
 final goRouterNotifierProvider = Provider((ref) {
-  return GoRouterNotifier(ref);
+  final authNotifier = ref.read(authProvider.notifier);
+  return GoRouterNotifier(authNotifier);
 });
 
 class GoRouterNotifier extends ChangeNotifier {
-  final Ref _ref;
-  AuthStatus _authStatus = AuthStatus.cheking;
+  final AuthNotifier _authNotifier;
 
-  GoRouterNotifier(this._ref) {
-    _ref.listen<AuthState>(authProvider, (_, state) {
-      _authStatus = state.status;
-      notifyListeners();
+  AuthStatus _authStatus = AuthStatus.checking;
+
+  GoRouterNotifier(this._authNotifier) {
+    _authNotifier.addListener((state) {
+      authStatus = state.authStatus;
     });
   }
 
   AuthStatus get authStatus => _authStatus;
+
+  set authStatus(AuthStatus value) {
+    _authStatus = value;
+    notifyListeners();
+  }
 }

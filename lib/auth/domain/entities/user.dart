@@ -1,23 +1,13 @@
 class User {
-  final String uuid;
-  final String fullName;
-  final String numberDocument;
-  final String phone;
+  final String message;
   final String email;
-  final String address;
-  final String birthDate;
-  final String password;
-  final String photo;
+  final String token;
+  final String timestap;
 
-  const User({
-    required this.uuid,
-    required this.fullName,
-    required this.numberDocument,
-    required this.phone,
+  User({
+    required this.message,
     required this.email,
-    required this.address,
-    required this.birthDate,
-    required this.password,
-    required this.photo,
+    required this.token,
+    required this.timestap,
   });
 }
